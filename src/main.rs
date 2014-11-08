@@ -1,12 +1,15 @@
 extern crate native;
 extern crate rsfml;
 
-use rsfml::system::{Vector2f, Clock};
-use rsfml::window::{ContextSettings, VideoMode, event, NoStyle};
+use rsfml::window::keyboard;
+use rsfml::system;
+use rsfml::window;
+use rsfml::window::event;
 use rsfml::graphics::{RenderWindow, RenderTarget, CircleShape, Color};
 
 use std::fmt;
 use std::num;
+use std::cmp;
 
 struct Circle {
     radius: f32,
@@ -45,60 +48,63 @@ fn drawCircle(window: &mut RenderWindow, circle: &Circle) -> () {
         alpha: (0xff) as u8
     };
     shape.set_fill_color(&color);
-    shape.set_position(&Vector2f::new(circle.position.x, circle.position.y));
+    shape.set_position(&system::Vector2f::new(circle.position.x, circle.position.y));
 
     window.draw(&shape);
 }
 
 fn main () -> () {
+    let window_size = 400;
+    let fwindow_size = window_size as f32;
     // Create the window of the application
-    let mut window = match RenderWindow::new(VideoMode::new_init(1368, 740, 32),
+    let mut window = match RenderWindow::new(
+        window::VideoMode::new_init(window_size, window_size, 32),
         "SFML Example",
-        NoStyle,
-        &ContextSettings::default()) {
+        window::NoStyle,
+        &window::ContextSettings::default()) {
         Some(window) => window,
         None => panic!("Cannot create a new Render Window.")
     };
 
-    let clock = Clock::new();
-    let mut mouse = Position {x:0.,y:0.};
+    let mut clock = system::Clock::new();
+    let mut position = Position {x:200., y:200.};
+    let mut yVelocity = 0.;
+    let mut xVelocity = 0.;
 
     while window.is_open() {
         // Handle events
         for event in window.events() {
             match event {
-                event::MouseMoved { x: x, y: y} => mouse = Position {
-                    x:x as f32, 
-                    y:y as f32
-                },
-                event::TextEntered { code: c } => window.close(),
-                event::Closed => window.close(),
+                event::KeyPressed {code:keyboard::Q, ..} => window.close(),
+                event::KeyPressed {code:keyboard::Up, ..} => yVelocity+=1.,
+                event::KeyPressed {code:keyboard::Down, ..} => yVelocity-=1.,
+                event::KeyPressed {code:keyboard::Left, ..} => xVelocity+=1.,
+                event::KeyPressed {code:keyboard::Right, ..} => xVelocity-=1.,
+                event::KeyPressed {code:code, ..} => 
+                    println!("position is ({},{})", position.x, position.y),
                 _             => {/* do nothing */}
             }
         }
-        let time = clock.get_elapsed_time().as_milliseconds() as i64;
+        let time = clock.get_elapsed_time().as_milliseconds() as f32;
+        if (time < 20.) {
+            continue;
+        }
+        let dy = time * yVelocity;
+        let dx = time * xVelocity;
+        position.y -= dy / 100.;
+        position.x -= dx / 100.;
+        position.y = (position.y + fwindow_size) % fwindow_size;
+        position.x = (position.x + fwindow_size) % fwindow_size;
         // Clear the window
         window.clear(&Color::new_RGB(0, 0, 0));
-        // Draw the shape
-        for i in range(0i, 90i) {
-            for j in range(0i, 50i) {
-                let position = Position {
-                    x: (5i + (i*15i)) as f32,
-                    y: (5i + (j*15i)) as f32
-                };
-                let dist = mouse.distance(position) as i64;
-                if (i==500 && j==500) {
-                    println!("{}",dist);                
-                }
-                let circle = Circle {
-                    radius: 5.,
-                    color: (time << 256) * num::pow(dist,1u) as i64,
-                    position: position
-                };
-                drawCircle(&mut window, &circle);
-            }
-        }
+        let circle = Circle {
+            radius: 10.,
+            color: 0xaaaaff,
+            position: position
+        };
+        drawCircle(&mut window, &circle);
         // Display things on screen
         window.display();
+        clock.restart();
     }
 }
