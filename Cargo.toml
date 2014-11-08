@@ -1,0 +1,9 @@
+[package]
+
+name = "playground"
+version = "0.0.1"
+authors = ["Doug Thayer <dougathayer@gmail.com>"]
+
+[dependencies.rust-sfml]
+
+git="https://github.com/jeremyletang/rust-sfml.git"
