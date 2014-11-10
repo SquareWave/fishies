@@ -17,21 +17,24 @@ fn start(argc: int, argv: *const *const u8) -> int {
 
 fn main () -> () {
     // Create the window of the application
-    let mut window = window::create(1200,700);
-    window.set_mouse_cursor_visible(false);
+    let (mut window, mut view) = window::create(1200,700);
     let mut input = input::InputManager::default();
     let mut state = state::default();
-    let display = display::DisplayManager;
+    let mut display = display::DisplayManager{
+        center: system::Vector2f{x: 600., y: 350.}
+    };
 
     let mut clock = system::Clock::new();
 
     while window.is_open() {
-        if clock.get_elapsed_time().as_milliseconds() < 20 {
-            continue;
-        }
+        // if clock.get_elapsed_time().as_milliseconds() < 20 {
+        //     continue;
+        // }
         input.poll(&mut window);
-        state = state::simulate(&state, input);
-        display.render(&state, &mut window);
+        if !input.pause {
+            state = state::simulate(&state, input);
+        }
+        display.render(&state, &input, &mut window, &mut view);
         clock.restart();
     }
 }
