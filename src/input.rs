@@ -8,6 +8,7 @@ pub struct InputManager {
     pub add_sharky: bool,
     pub special: bool,
     pub pause: bool,
+    pub rewind: bool,
     pub mouse: system::Vector2i,
     pub direction: Direction,
     pub zoom: Zoom
@@ -34,6 +35,7 @@ impl InputManager {
             add_sharky: false,
             special: false,
             pause: false,
+            rewind: false,
             direction: Direction {
                 up: false,
                 down: false,
@@ -50,6 +52,8 @@ impl InputManager {
                 //event::MouseMoved {x, y} => self.mouse = system::Vector2i {x:x, y:y},
                 event::KeyPressed {code:keyboard::Q, ..} => window.close(),
                 event::KeyPressed {code:keyboard::P, ..} => self.pause = !self.pause,
+                event::KeyPressed {code:keyboard::R, ..} => self.rewind = true,
+                event::KeyReleased {code:keyboard::R, ..} => self.rewind = false,
                 event::KeyPressed {code:keyboard::F, ..} => self.add_fishy = true,
                 event::KeyReleased {code:keyboard::F, ..} => self.add_fishy = false,
                 event::KeyPressed {code:keyboard::S, ..} => self.add_sharky = true,
