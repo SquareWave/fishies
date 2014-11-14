@@ -141,7 +141,7 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
                 let mut push = system::Vector2f{x:0., y:0.};
                 let stalking_distance = 1024.;
                 let smell_distance = 4096.;
-                let mob_mentality = 1024.;
+                let mob_mentality = 512.;
                 let bandwagon_appeal = 20.;
                 let personal_space = 200.;
                 let target_range = 30.;
@@ -165,9 +165,12 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
                             let mag = get_magnitude(delta);
                             if shark.active || mag > stalking_distance {
                                 push = push - (delta / mag);
-                            } else if mag < smell_distance {
-                                fish_in_range = true;
+                            } else {
                                 push = push + (delta / mag);
+                            }
+
+                            if mag < smell_distance {
+                                fish_in_range = true;
                             }
                         },
                         SharkyObj(other) => {
