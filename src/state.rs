@@ -4,9 +4,14 @@ use std::cmp;
 use std::f64::consts;
 use rsfml::system;
 
+// static BOUNDS_X: f32 = 1000.;
+// static BOUNDS_Y: f32 = 1000.;
+
+pub type Vector = system::Vector2f;
+
 #[deriving(Clone)]
 pub struct Ball {
-    pub position: system::Vector2f,
+    pub position: Vector,
     pub speed: f32,
     pub orientation: f32,
     pub animation: u8
@@ -14,17 +19,18 @@ pub struct Ball {
 
 #[deriving(Clone)]
 pub struct Fishy {
-    pub position: system::Vector2f,
+    pub position: Vector,
+    pub velocity: Vector,
+    pub tilt: Vector,
     pub orientation: f32,
-    pub velocity: system::Vector2f,
     pub animation: u8,
     pub alive: bool,
-    pub kind: u8
+    pub kind: u8,
 }
 
 #[deriving(Clone)]
 pub struct Sharky {
-    pub position: system::Vector2f,
+    pub position: Vector,
     pub speed: f32,
     pub orientation: f32,
     pub active: bool,
@@ -40,15 +46,16 @@ pub enum GameObject {
 
 pub fn default() -> Vec<GameObject> {
     let initial_fishy = Fishy {
-        position: system::Vector2f {x: 0., y:0.},
-        velocity: system::Vector2f {x: 0., y:0.},
+        position: zero_vector(),
+        velocity: zero_vector(),
+        tilt: zero_vector(),
         orientation: 0.,
         alive: true,
         animation: 0,
         kind: 0
     };
     let initial_ball = Ball {
-        position: system::Vector2f {x: 0., y:0.},
+        position: zero_vector(),
         speed: 1.,
         orientation: 0.,
         animation: 0
@@ -56,12 +63,17 @@ pub fn default() -> Vec<GameObject> {
     vec![FishyObj(initial_fishy), BallObj(initial_ball)]
 }
 
-pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<GameObject> {
-    let mut ball_pos = system::Vector2f {x: 0., y: 0.};
+// this function is a nightmare but I actually think it's the best option right now
+// to clump the whole thing together
+pub fn simulate(state: &Vec<GameObject>, 
+    input: input::InputManager) -> Vec<GameObject> {
+    let mut ball_pos = zero_vector();
     let mut new_state: Vec<GameObject> = state.iter().map(|&obj| {
         match obj {
 
-
+            // fishies want to get closer to other fishies but not too close,
+            // avoid sharks based on how fast the sharks are going, and follow
+            // the user ("Ball") if it's close
             FishyObj(mut fish) => {
 
                 if !fish.alive {
@@ -70,21 +82,31 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
                     return FishyObj(fish);
                 }
 
-                let leadership = 1.;
+                let leadership = 0.25;
                 let death_smell = 80.;
                 let fear_of_the_dead = 20.;
                 let personal_space = 17.;
                 let presence = 40.;
                 let fear_of_intimacy = 20.;
                 let lovey_dovey = 0.002;
-                let sight_range = 890.;
+                let sight_range = 800.;
+                let attraction_range = 300.;
+                let alignment_range = 200.;
                 let death_zone = 12.;
                 let fishy_sense = 25.;
                 let fear_of_death = 200.;
-                let turn_rate = 6.;
+                let turn_rate = 12.;
                 let speed = 12.;
+                let tilt_factor = 0.05;
 
-                let mut push = system::Vector2f{x:0., y:0.};
+                let mut push = zero_vector();
+                let tilt_decider = rand::random::<i32>() % 12000;
+                if tilt_decider == 1 {
+                    fish.tilt = get_unit_vector((rand::random::<u32>() % 360) as f32);
+                } else if tilt_decider / 4 == 0 {
+                    fish.tilt = zero_vector();
+                }
+                push = push + fish.tilt * tilt_factor;
                 for &obj_inner in state.iter() {
                     match obj_inner {
                         BallObj(ball) => {
@@ -103,7 +125,10 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
                                 push = push + (target / mag) * fear_of_the_dead;
                             } else if mag < personal_space {
                                 push = push + (target / mag) * fear_of_intimacy;
-                            } else if mag < sight_range {
+                            } else if mag < alignment_range {
+                                push = push + other.tilt * tilt_factor;
+                                push = push + get_unit_vector(other.orientation) * lovey_dovey;
+                            } else if mag < attraction_range {
                                 push = push - (target / mag) * lovey_dovey;
                             }
                         },
@@ -121,6 +146,7 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
                     }
                 }
                 push = push / get_magnitude(push);
+                //push = bound(fish.position, push);
                 let target_r = to_360(get_rotation(push));
                 let new_r = rotate_toward(fish.orientation, target_r, turn_rate);
                 let unit_vector = get_unit_vector(new_r);
@@ -136,9 +162,11 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
                 FishyObj(fish)
             },
 
-
+            // sharkies want to keep their distance from the fishies but still stalk
+            // them, until they decide to charge, at which point they accelerate
+            // rapidly toward the fishies
             SharkyObj(mut shark) => {
-                let mut push = system::Vector2f{x:0., y:0.};
+                let mut push = zero_vector();
                 let stalking_distance = 1024.;
                 let smell_distance = 4096.;
                 let mob_mentality = 512.;
@@ -189,6 +217,7 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
                     }
                 }
                 push = push / get_magnitude(push);
+                //push = bound(shark.position, push);
                 let target_r = to_360(get_rotation(push));
                 let turn_rate = if shark.active {
                     active_turn_rate
@@ -218,7 +247,8 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
                 SharkyObj(shark)
             },
 
-
+            // this is the user. it used to be more ball-like. probably needs a
+            // name change
             BallObj(mut ball) => {
                 ball_pos = ball.position;
                 let accel = 0.5;
@@ -227,10 +257,13 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
                 if input.direction.left { ball.orientation -= turn_rate };
                 if input.direction.right { ball.orientation += turn_rate };
                 if input.direction.up { 
-                    ball.speed = f_min(ball.speed + accel, speed_cap); 
+                    ball.speed = f_min(ball.speed + accel, speed_cap);
                 };
                 if input.direction.down {
                     ball.speed = f_max(ball.speed - accel, 0.); 
+                }
+                if input.super_speed {
+                    ball.speed = 2. * speed_cap;
                 }
                 let velocity = get_unit_vector(ball.orientation) * ball.speed;
                 ball.position = ball.position + velocity;
@@ -247,9 +280,13 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
     }).collect();
     if input.add_fishy {
         let fishy = Fishy {
-            position: ball_pos,
+            position: Vector {
+                x: ball_pos.x + rand::random::<i8>() as f32, 
+                y: ball_pos.y + rand::random::<i8>() as f32
+            },
+            velocity: zero_vector(),
+            tilt: zero_vector(),
             orientation: 0.,
-            velocity: system::Vector2f {x: 0., y:0.},
             alive: true,
             animation: 0,
             kind: rand::random::<u8>() % 3
@@ -258,7 +295,7 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
     };
     if input.add_sharky {
         let sharky = Sharky {
-            position: system::Vector2f {x: 200., y:200.},
+            position: zero_vector(),
             orientation: 2.5,
             active: false,
             speed: 0.,
@@ -269,7 +306,7 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
     new_state
 }
 
-fn get_rotation(vec: system::Vector2f) -> f32 {
+fn get_rotation(vec: Vector) -> f32 {
     if vec.y > 0. {
         (vec.x / vec.y).atan() * (-360. / (2. * consts::PI as f32))
     } else if vec.y < 0. {
@@ -281,15 +318,40 @@ fn get_rotation(vec: system::Vector2f) -> f32 {
     }
 }
 
-fn get_magnitude(vec: system::Vector2f) -> f32 {
+// fn bound(pos: Vector, push: Vector) -> Vector {
+//     let mut bounded = push;
+//     bounded.x = if pos.x > BOUNDS_X {
+//         -1.
+//     } else if pos.x < -BOUNDS_X {
+//         1.
+//     } else {
+//         push.x
+//     };
+
+//     bounded.y = if pos.y > BOUNDS_Y {
+//         -1.
+//     } else if pos.y < -BOUNDS_Y {
+//         1.
+//     } else {
+//         push.y
+//     };
+
+//     bounded
+//}
+
+fn zero_vector() -> Vector {
+    Vector{x: 0., y: 0.}
+}
+
+fn get_magnitude(vec: Vector) -> f32 {
     (vec.x*vec.x + vec.y*vec.y).sqrt()
 }
 
-fn get_unit_vector(rotation: f32) -> system::Vector2f {
+fn get_unit_vector(rotation: f32) -> Vector {
     let rad = (to_360(rotation) / 180.) * consts::PI as f32;
     let x = -rad.sin();
     let y = rad.cos();
-    system::Vector2f { x:x, y:y }
+    Vector { x:x, y:y }
 }
 
 fn f_max(a: f32, b:f32) -> f32 {
@@ -309,11 +371,11 @@ fn rotate_toward(cur: f32, target: f32, speed: f32) -> f32 {
 }
 
 fn to_360 (r: f32) -> f32 {
-    let mut new_r = r;
-    while new_r < 0. {
-        new_r += 360.;
+    if r < 0. {
+        360. - ((-r) % 360.) 
+    } else {
+        r % 360.
     }
-    new_r % 360.
 }
 
 fn is_clockwise(cur: f32, target: f32) -> bool {

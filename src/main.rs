@@ -1,13 +1,13 @@
 extern crate native;
 extern crate libc;
 extern crate rsfml;
-extern crate playground;
+extern crate fishies;
 extern crate collections;
 
-use playground::window;
-use playground::state;
-use playground::input;
-use playground::display;
+use fishies::window;
+use fishies::state;
+use fishies::input;
+use fishies::display;
 
 use rsfml::system;
 
