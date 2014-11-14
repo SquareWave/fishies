@@ -4,6 +4,7 @@ use std::cmp;
 use std::f64::consts;
 use rsfml::system;
 
+#[deriving(Clone)]
 pub struct Ball {
     pub position: system::Vector2f,
     pub speed: f32,
@@ -11,6 +12,7 @@ pub struct Ball {
     pub animation: u8
 }
 
+#[deriving(Clone)]
 pub struct Fishy {
     pub position: system::Vector2f,
     pub orientation: f32,
@@ -20,6 +22,7 @@ pub struct Fishy {
     pub kind: u8
 }
 
+#[deriving(Clone)]
 pub struct Sharky {
     pub position: system::Vector2f,
     pub speed: f32,
@@ -28,6 +31,7 @@ pub struct Sharky {
     pub energy: int
 }
 
+#[deriving(Clone)]
 pub enum GameObject {
     BallObj (Ball),
     FishyObj (Fishy),
@@ -149,7 +153,7 @@ pub fn simulate(state: &Vec<GameObject>, input: input::InputManager) -> Vec<Game
                 let maximum_speed = 45.;
                 let energy_decay = 4;
                 let max_energy = 1024;
-                let heres_johnny = 512;
+                let heres_johnny = 256;
 
                 let mut fish_in_range = false;
 
