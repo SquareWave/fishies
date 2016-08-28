@@ -5,7 +5,7 @@ algorithm, but fun to play with! Fishes stick together in a school, but avoid
 sharks when they approach.
 
 Key | Action
-------------
+----|-------
 `Q` | Close window
 `P` | Pause
 `R` | Rewind state
@@ -14,10 +14,10 @@ Key | Action
 `Z` | Zoom in
 `X` | Zoom out
 `W` | Run at 2x speed
-:up: | Speed up player
-:down: | Slow down player
-:left: | Turn left
-:right: | Turn right
+`↑` | Speed up player
+`↓` | Slow down player
+`←` | Turn left
+`→` | Turn right
 
 
 ## TODO
