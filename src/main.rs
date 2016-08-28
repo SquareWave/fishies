@@ -1,20 +1,13 @@
-extern crate native;
-extern crate libc;
-extern crate rsfml;
+extern crate rand;
+extern crate sfml;
 extern crate fishies;
-extern crate collections;
 
 use fishies::window;
 use fishies::state;
 use fishies::input;
 use fishies::display;
 
-use rsfml::system;
-
-#[start]
-fn start(argc: int, argv: *const *const u8) -> int {
-    native::start(argc, argv, main)
-}
+use sfml::system;
 
 fn main () -> () {
     let (mut window, mut view) = window::create(1200,700);
@@ -32,18 +25,18 @@ fn main () -> () {
 
     while window.is_open() {
         input.poll(&mut window);
-        let state = match states.pop() {
+        let mut state = match states.pop() {
             Some(state) => state,
             None => base_state.clone()
         };
         if !input.rewind {
             states.push(state.clone());
             if !input.pause {
-                let next = state::simulate(&state, input);
+                let next = state::simulate(&state, &input);
                 states.push(next.clone());
             }
         }
-        display.render(&state, &input, &mut window, &mut view);
+        display.render(&mut state, &input, &mut window, &mut view);
         clock.restart();
     }
 }

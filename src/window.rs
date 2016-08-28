@@ -1,8 +1,9 @@
-use rsfml::window;
-use rsfml::system;
-use rsfml::graphics::{RenderWindow, RenderTarget, View};
+use sfml::window;
+use sfml::window::{window_style};
+use sfml::system;
+use sfml::graphics::{RenderWindow, RenderTarget, View};
 
-pub fn create(width: uint, height: uint) -> (RenderWindow, View) {
+pub fn create(width: u32, height: u32) -> (RenderWindow, View) {
     let (mut w,v) = (
         create_window(width, height), 
         create_view(width as f32, height as f32)
@@ -12,11 +13,11 @@ pub fn create(width: uint, height: uint) -> (RenderWindow, View) {
     (w,v)
 }
 
-fn create_window(width: uint, height: uint) -> RenderWindow {
+fn create_window(width: u32, height: u32) -> RenderWindow {
     match RenderWindow::new(
         window::VideoMode::new_init(width, height, 32),
-        "SFML Example",
-        window::NoStyle,
+        "Fishies",
+        window_style::NONE,
         &window::ContextSettings::default()) {
         Some(window) => window,
         None => panic!("Too foggy!")

@@ -1,6 +1,4 @@
-#![feature(struct_variant)]
-extern crate alloc;
-extern crate rsfml;
+extern crate sfml;
 
 pub mod window;
 pub mod state;

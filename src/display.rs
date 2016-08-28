@@ -1,8 +1,16 @@
-use state;
-use input;
+use state::{GameObject};
+use input::{InputManager,Zoom};
 use std::f64::consts;
-use rsfml::system;
-use rsfml::graphics::{RenderWindow, RenderTarget, Color, Font, Text, View};
+use sfml::system;
+use sfml::graphics::{
+    RenderWindow,
+    RenderTarget,
+    Color,
+    Font,
+    Text,
+    View,
+    Transformable
+};
 
 pub struct DisplayManager {
     pub center: system::Vector2f
@@ -11,32 +19,32 @@ pub struct DisplayManager {
 impl DisplayManager {
     pub fn render(
         &mut self, 
-        state: &Vec<state::GameObject>,
-        input: &input::InputManager,
+        state: &mut Vec<GameObject>,
+        input: &InputManager,
         window: &mut RenderWindow, view: &mut View
         ) -> () {
 
-        let color_0 = Color::new_RGB(0, 67, 88);
-        let color_1 = Color::new_RGB(190, 219, 57);
-        let color_2 = Color::new_RGB(255, 225, 26);
-        let color_3 = Color::new_RGB(253, 116, 0);
-        let color_4 = Color::new_RGB(31, 138, 112);
+        macro_rules! color_0 { () => (Color::new_rgb(0, 67, 88)) }
+        macro_rules! color_1 { () => (Color::new_rgb(190, 219, 57)) }
+        macro_rules! color_2 { () => (Color::new_rgb(255, 225, 26)) }
+        macro_rules! color_3 { () => (Color::new_rgb(253, 116, 0)) }
+        macro_rules! color_4 { () => (Color::new_rgb(31, 138, 112)) }
 
         match input.zoom {
-            input::ZoomIn => view.zoom(1.1),
-            input::ZoomOut => view.zoom(0.9),
+            Zoom::In => view.zoom(1.1),
+            Zoom::Out => view.zoom(0.9),
             _ => {}
         }
 
-        window.clear(&color_0);
+        window.clear(&color_0!());
         let font = match Font::new_from_file("./assets/UbuntuMono-R.ttf") {
             Some(font) => font,
             None => panic!("font wasn't loaded ohnoes!")
         };
 
-        for &mut obj in state.iter() {
+        for ref mut obj in state.iter_mut() {
             match obj {
-                state::FishyObj(f) => {
+                &mut &mut GameObject::Fishy(ref f) => {
                     let mut text = match Text::new() {
                         Some(text) => text,
                         None => panic!("text wasn't made ohnoes!")
@@ -52,22 +60,24 @@ impl DisplayManager {
                     text.set_character_size(character_size);
 
                     let mut color = if f.kind == 0 {
-                        color_1 
+                        color_1!()
                     } else if f.kind == 1 {
-                        color_2
+                        color_2!()
                     } else {
-                        color_3
+                        color_3!()
                     };
 
                     if !f.alive {
-                        color.alpha = 128;
+                        let Color(mut sf_color) = color;
+                        sf_color.a = 128;
+                        color = Color(sf_color);
                     }
 
                     text.set_color(&color);
 
                     window.draw(&text);
                 },
-                state::SharkyObj(shark) => {
+                &mut &mut GameObject::Sharky(ref shark) => {
                     let mut text = match Text::new() {
                         Some(text) => text,
                         None => panic!("text wasn't made ohnoes!")
@@ -81,11 +91,11 @@ impl DisplayManager {
                     text.set_rotation(shark.orientation + 180.);
                     text.set_character_size(character_size);
 
-                    text.set_color(&color_1);
+                    text.set_color(&color_1!());
 
                     window.draw(&text);
                 },
-                state::BallObj(b) => {
+                &mut &mut GameObject::Ball(ref b) => {
                     view.set_center(&b.position);
                     window.set_view(view);
                     self.center = b.position;
@@ -101,7 +111,7 @@ impl DisplayManager {
                     text.set_position(&display_position);
                     text.set_rotation(b.orientation + 180.);
                     text.set_character_size(character_size);
-                    text.set_color(&color_4);
+                    text.set_color(&color_4!());
 
                     window.draw(&text);
 
@@ -110,7 +120,7 @@ impl DisplayManager {
                     //     None       => panic!("Error, cannot create ball")
                     // };
                     // circle.set_radius(1.);
-                    // circle.set_fill_color(&Color::new_RGB(144, 240, 64));
+                    // circle.set_fill_color(&Color::new_rgb(144, 240, 64));
                     // circle.set_position(&b.position);
                     // window.draw(&circle);
                 }

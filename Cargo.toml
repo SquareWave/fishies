@@ -4,6 +4,6 @@ name = "fishies"
 version = "0.0.1"
 authors = ["Doug Thayer <dougathayer@gmail.com>"]
 
-[dependencies.rust-sfml]
-
-git="https://github.com/jeremyletang/rust-sfml.git"
+[dependencies]
+sfml = { git = "https://github.com/jeremyletang/rust-sfml.git", rev = "9f35b8e" }
+rand = "0.3"

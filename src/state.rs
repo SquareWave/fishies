@@ -1,15 +1,16 @@
+extern crate rand;
+
 use input;
-use std::rand;
 use std::cmp;
 use std::f64::consts;
-use rsfml::system;
+use sfml::system;
 
 // static BOUNDS_X: f32 = 1000.;
 // static BOUNDS_Y: f32 = 1000.;
 
 pub type Vector = system::Vector2f;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Ball {
     pub position: Vector,
     pub speed: f32,
@@ -17,7 +18,7 @@ pub struct Ball {
     pub animation: u8
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Fishy {
     pub position: Vector,
     pub velocity: Vector,
@@ -28,20 +29,20 @@ pub struct Fishy {
     pub kind: u8,
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Sharky {
     pub position: Vector,
     pub speed: f32,
     pub orientation: f32,
     pub active: bool,
-    pub energy: int
+    pub energy: i32
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub enum GameObject {
-    BallObj (Ball),
-    FishyObj (Fishy),
-    SharkyObj (Sharky),
+    Ball (Ball),
+    Fishy (Fishy),
+    Sharky (Sharky),
 }
 
 pub fn default() -> Vec<GameObject> {
@@ -60,26 +61,26 @@ pub fn default() -> Vec<GameObject> {
         orientation: 0.,
         animation: 0
     };
-    vec![FishyObj(initial_fishy), BallObj(initial_ball)]
+    vec![GameObject::Fishy(initial_fishy), GameObject::Ball(initial_ball)]
 }
 
 // this function is a nightmare but I actually think it's the best option right now
 // to clump the whole thing together
 pub fn simulate(state: &Vec<GameObject>, 
-    input: input::InputManager) -> Vec<GameObject> {
+    input: &input::InputManager) -> Vec<GameObject> {
     let mut ball_pos = zero_vector();
-    let mut new_state: Vec<GameObject> = state.iter().map(|&obj| {
-        match obj {
+    let mut new_state: Vec<GameObject> = state.iter().map(|ref obj| {
+        match obj.clone().clone() {
 
             // fishies want to get closer to other fishies but not too close,
             // avoid sharks based on how fast the sharks are going, and follow
             // the user ("Ball") if it's close
-            FishyObj(mut fish) => {
+            GameObject::Fishy(mut fish) => {
 
                 if !fish.alive {
                     fish.velocity = fish.velocity * 0.99;
                     fish.orientation = fish.orientation + 2.;
-                    return FishyObj(fish);
+                    return GameObject::Fishy(fish);
                 }
 
                 let leadership = 0.25;
@@ -107,9 +108,9 @@ pub fn simulate(state: &Vec<GameObject>,
                     fish.tilt = zero_vector();
                 }
                 push = push + fish.tilt * tilt_factor;
-                for &obj_inner in state.iter() {
+                for ref obj_inner in state.iter() {
                     match obj_inner {
-                        BallObj(ball) => {
+                        &&GameObject::Ball(ref ball) => {
                             if input.special {continue;}
                             let target = fish.position - ball.position;
                             let mag = get_magnitude(target);
@@ -117,7 +118,7 @@ pub fn simulate(state: &Vec<GameObject>,
                                 push = push - (target / mag) * leadership;
                             }
                         },
-                        FishyObj(other) => {
+                        &&GameObject::Fishy(ref other) => {
                             let target = fish.position - other.position;
                             let mag = get_magnitude(target);
                             if mag == 0. {continue;}
@@ -132,7 +133,7 @@ pub fn simulate(state: &Vec<GameObject>,
                                 push = push - (target / mag) * lovey_dovey;
                             }
                         },
-                        SharkyObj(shark) => {
+                        &&GameObject::Sharky(ref shark) => {
                             let delta = fish.position - shark.position;
                             let mag = get_magnitude(delta);
                             if mag < death_zone {
@@ -159,13 +160,13 @@ pub fn simulate(state: &Vec<GameObject>,
                 } else {
                     fish.animation += 1;
                 }
-                FishyObj(fish)
+                GameObject::Fishy(fish)
             },
 
             // sharkies want to keep their distance from the fishies but still stalk
             // them, until they decide to charge, at which point they accelerate
             // rapidly toward the fishies
-            SharkyObj(mut shark) => {
+            GameObject::Sharky(mut shark) => {
                 let mut push = zero_vector();
                 let stalking_distance = 1024.;
                 let smell_distance = 4096.;
@@ -185,10 +186,10 @@ pub fn simulate(state: &Vec<GameObject>,
 
                 let mut fish_in_range = false;
 
-                for &obj_inner in state.iter() {
+                for ref obj_inner in state.iter() {
                     match obj_inner {
-                        BallObj(..) => { },
-                        FishyObj(other) => {
+                        &&GameObject::Ball(..) => { },
+                        &&GameObject::Fishy(ref other) => {
                             let delta = shark.position - other.position;
                             let mag = get_magnitude(delta);
                             if shark.active || mag > stalking_distance {
@@ -201,7 +202,7 @@ pub fn simulate(state: &Vec<GameObject>,
                                 fish_in_range = true;
                             }
                         },
-                        SharkyObj(other) => {
+                        &&GameObject::Sharky(ref other) => {
                             let delta = shark.position - other.position;
                             let mag = get_magnitude(delta);
                             if mag == 0. {continue;}
@@ -238,18 +239,18 @@ pub fn simulate(state: &Vec<GameObject>,
                 } else {
                     shark.energy = cmp::min(shark.energy + 1, max_energy);
                     shark.speed = f_max(shark.speed - decel, minimum_speed);
-                    if rand::random::<int>() % heres_johnny == 0 {
+                    if rand::random::<i32>() % heres_johnny == 0 {
                         shark.active = true;
                     }
                 }
                 shark.position = shark.position + unit_vector * shark.speed;
                 shark.orientation = new_r;
-                SharkyObj(shark)
+                GameObject::Sharky(shark)
             },
 
             // this is the user. it used to be more ball-like. probably needs a
             // name change
-            BallObj(mut ball) => {
+            GameObject::Ball(mut ball) => {
                 ball_pos = ball.position;
                 let accel = 0.5;
                 let speed_cap = 15.;
@@ -272,7 +273,7 @@ pub fn simulate(state: &Vec<GameObject>,
                 } else {
                     ball.animation += 1;
                 }
-                BallObj(ball)
+                GameObject::Ball(ball)
             }
 
 
@@ -291,7 +292,7 @@ pub fn simulate(state: &Vec<GameObject>,
             animation: 0,
             kind: rand::random::<u8>() % 3
         };
-        new_state.push(FishyObj(fishy));       
+        new_state.push(GameObject::Fishy(fishy));       
     };
     if input.add_sharky {
         let sharky = Sharky {
@@ -301,7 +302,7 @@ pub fn simulate(state: &Vec<GameObject>,
             speed: 0.,
             energy: 0
         };
-        new_state.push(SharkyObj(sharky));       
+        new_state.push(GameObject::Sharky(sharky));       
     };
     new_state
 }
