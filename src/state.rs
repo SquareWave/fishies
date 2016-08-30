@@ -30,6 +30,14 @@ pub struct Fishy {
 }
 
 #[derive(Clone)]
+pub struct Drifter {
+    pub position: Vector,
+    pub velocity: Vector,
+    pub size: f32,
+    pub fill: f32
+}
+
+#[derive(Clone)]
 pub struct Sharky {
     pub position: Vector,
     pub speed: f32,
@@ -43,6 +51,7 @@ pub enum GameObject {
     Ball (Ball),
     Fishy (Fishy),
     Sharky (Sharky),
+    Drifter (Drifter),
 }
 
 pub fn default() -> Vec<GameObject> {
@@ -61,7 +70,28 @@ pub fn default() -> Vec<GameObject> {
         orientation: 0.,
         animation: 0
     };
-    vec![GameObject::Fishy(initial_fishy), GameObject::Ball(initial_ball)]
+    let mut result = vec![
+        GameObject::Fishy(initial_fishy),
+        GameObject::Ball(initial_ball)
+    ];
+
+    for _ in 0..50 {
+        let drifter = Drifter {
+            position: Vector {
+                x: rand::random::<i8>() as f32, 
+                y: rand::random::<i8>() as f32
+            },
+            size: rand::random::<i8>() as f32,
+            velocity: Vector {
+                x: rand::random::<i8>() as f32 / 128., 
+                y: rand::random::<i8>() as f32 / 128.
+            },
+            fill: rand::random::<u8>() as f32 / 255.
+        };
+        result.push(GameObject::Drifter(drifter))
+    }
+
+    result
 }
 
 // this function is a nightmare but I actually think it's the best option right now
@@ -143,7 +173,9 @@ pub fn simulate(state: &Vec<GameObject>,
                             if mag < shark.speed * fishy_sense {
                                 push = push + (delta / mag) * fear_of_death;
                             }
-                        }
+                        },
+                        _ => {}
+
                     }
                 }
                 push = push / get_magnitude(push);
@@ -214,7 +246,9 @@ pub fn simulate(state: &Vec<GameObject>,
                                 }
                                 push = push - (delta / mag) * bandwagon_appeal;
                             }  
-                        }
+                        },
+                        _ => {}
+
                     }
                 }
                 push = push / get_magnitude(push);
@@ -248,6 +282,11 @@ pub fn simulate(state: &Vec<GameObject>,
                 GameObject::Sharky(shark)
             },
 
+            GameObject::Drifter(mut drifter) => {
+                drifter.position = drifter.position + drifter.velocity;
+                GameObject::Drifter(drifter)
+            },
+
             // this is the user. it used to be more ball-like. probably needs a
             // name change
             GameObject::Ball(mut ball) => {
@@ -275,8 +314,6 @@ pub fn simulate(state: &Vec<GameObject>,
                 }
                 GameObject::Ball(ball)
             }
-
-
         }
     }).collect();
     if input.add_fishy {

@@ -17,7 +17,7 @@ fn create_window(width: u32, height: u32) -> RenderWindow {
     match RenderWindow::new(
         window::VideoMode::new_init(width, height, 32),
         "Fishies",
-        window_style::NONE,
+        window_style::CLOSE,
         &window::ContextSettings::default()) {
         Some(window) => window,
         None => panic!("Too foggy!")

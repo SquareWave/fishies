@@ -69,9 +69,30 @@ impl DisplayManager {
 
                     if !f.alive {
                         let Color(mut sf_color) = color;
-                        sf_color.a = 128;
+                        sf_color.alpha = 128;
                         color = Color(sf_color);
                     }
+
+                    text.set_color(&color);
+
+                    window.draw(&text);
+                },
+                &mut &mut GameObject::Drifter(ref d) => {
+                    let mut text = match Text::new() {
+                        Some(text) => text,
+                        None => panic!("text wasn't made ohnoes!")
+                    };
+                    text.set_font(&font);
+                    text.set_string("o");
+                    let character_size = 24;
+                    let display_position = get_display_position(
+                        d.position, 0., character_size as f32);
+                    text.set_position(&display_position);
+                    text.set_character_size(character_size);
+
+
+                    let color =
+                        Color::new_rgba(255, 255, 255, (d.fill * 255.) as u8);
 
                     text.set_color(&color);
 

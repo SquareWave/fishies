@@ -1,5 +1,5 @@
 use sfml::system;
-use sfml::window::{Event,Key};
+use sfml::window::{event,Key};
 use sfml::graphics::{RenderWindow};
 
 pub struct InputManager {
@@ -52,29 +52,29 @@ impl InputManager {
         for event in window.events() {
             match event {
                 //Event::MouseMoved {x, y} => self.mouse = system::Vector2i {x:x, y:y},
-                Event::KeyPressed {code:Key::Q, ..} => close_window = true,
-                Event::KeyPressed {code:Key::P, ..} => self.pause = !self.pause,
-                Event::KeyPressed {code:Key::R, ..} => self.rewind = true,
-                Event::KeyReleased {code:Key::R, ..} => self.rewind = false,
-                Event::KeyPressed {code:Key::F, ..} => self.add_fishy = true,
-                Event::KeyReleased {code:Key::F, ..} => self.add_fishy = false,
-                Event::KeyPressed {code:Key::S, ..} => self.add_sharky = true,
-                Event::KeyPressed {code:Key::I, ..} => self.special = !self.special,
-                Event::KeyPressed {code:Key::Z, ..} => self.zoom = Zoom::In,
-                Event::KeyReleased {code:Key::Z, ..} => self.zoom = Zoom::NoZoom,
-                Event::KeyPressed {code:Key::X, ..} => self.zoom = Zoom::Out,
-                Event::KeyReleased {code:Key::X, ..} => self.zoom = Zoom::NoZoom,
-                Event::KeyPressed {code:Key::W, ..} => self.super_speed = true,
-                Event::KeyReleased {code:Key::W, ..} => self.super_speed = false,
-                Event::KeyPressed {code:Key::Up, ..} => self.direction.up = true,
-                Event::KeyPressed {code:Key::Down, ..} => self.direction.down = true,
-                Event::KeyPressed {code:Key::Left, ..} => self.direction.left = true,
-                Event::KeyPressed {code:Key::Right, ..} => self.direction.right = true,
-                Event::KeyReleased {code:Key::Up, ..} => self.direction.up = false,
-                Event::KeyReleased {code:Key::Down, ..} => self.direction.down = false,
-                Event::KeyReleased {code:Key::Left, ..} => self.direction.left = false,
-                Event::KeyReleased {code:Key::Right, ..} => self.direction.right = false,
-                Event::KeyPressed {..} => println!("{}, {}", self.mouse.x, self.mouse.y),
+                event::KeyPressed {code:Key::Q, ..} => close_window = true,
+                event::KeyPressed {code:Key::P, ..} => self.pause = !self.pause,
+                event::KeyPressed {code:Key::R, ..} => self.rewind = true,
+                event::KeyReleased {code:Key::R, ..} => self.rewind = false,
+                event::KeyPressed {code:Key::F, ..} => self.add_fishy = true,
+                event::KeyReleased {code:Key::F, ..} => self.add_fishy = false,
+                event::KeyPressed {code:Key::S, ..} => self.add_sharky = true,
+                event::KeyPressed {code:Key::I, ..} => self.special = !self.special,
+                event::KeyPressed {code:Key::Z, ..} => self.zoom = Zoom::In,
+                event::KeyReleased {code:Key::Z, ..} => self.zoom = Zoom::NoZoom,
+                event::KeyPressed {code:Key::X, ..} => self.zoom = Zoom::Out,
+                event::KeyReleased {code:Key::X, ..} => self.zoom = Zoom::NoZoom,
+                event::KeyPressed {code:Key::W, ..} => self.super_speed = true,
+                event::KeyReleased {code:Key::W, ..} => self.super_speed = false,
+                event::KeyPressed {code:Key::Up, ..} => self.direction.up = true,
+                event::KeyPressed {code:Key::Down, ..} => self.direction.down = true,
+                event::KeyPressed {code:Key::Left, ..} => self.direction.left = true,
+                event::KeyPressed {code:Key::Right, ..} => self.direction.right = true,
+                event::KeyReleased {code:Key::Up, ..} => self.direction.up = false,
+                event::KeyReleased {code:Key::Down, ..} => self.direction.down = false,
+                event::KeyReleased {code:Key::Left, ..} => self.direction.left = false,
+                event::KeyReleased {code:Key::Right, ..} => self.direction.right = false,
+                event::KeyPressed {..} => println!("{}, {}", self.mouse.x, self.mouse.y),
                 _             => {/* do nothing */}
             }
         }
