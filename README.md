@@ -1,8 +1,10 @@
 # Fishies
 
-Toy approximation of 2D flock/school behavior. Basically a hacky Boyd's
+Toy approximation of 2D flock/school behavior. Basically a variant of Boyd's
 algorithm, but fun to play with! Fishes stick together in a school, but avoid
 sharks when they approach.
+
+![gameplay demo](https://github.com/SquareWave/fishies/blob/master/demo/giphy.gif?raw=true)
 
 Key | Action
 ----|-------
