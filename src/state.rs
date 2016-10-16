@@ -10,7 +10,7 @@ use sfml::system;
 
 pub type Vector = system::Vector2f;
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct Ball {
     pub position: Vector,
     pub speed: f32,
@@ -18,7 +18,7 @@ pub struct Ball {
     pub animation: u8
 }
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct Fishy {
     pub position: Vector,
     pub velocity: Vector,
@@ -29,7 +29,7 @@ pub struct Fishy {
     pub kind: u8,
 }
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct Drifter {
     pub position: Vector,
     pub velocity: Vector,
@@ -37,7 +37,7 @@ pub struct Drifter {
     pub fill: f32
 }
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct Sharky {
     pub position: Vector,
     pub speed: f32,
@@ -46,7 +46,7 @@ pub struct Sharky {
     pub energy: i32
 }
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub enum GameObject {
     Ball (Ball),
     Fishy (Fishy),
@@ -99,8 +99,8 @@ pub fn default() -> Vec<GameObject> {
 pub fn simulate(state: &Vec<GameObject>, 
     input: &input::InputManager) -> Vec<GameObject> {
     let mut ball_pos = zero_vector();
-    let mut new_state: Vec<GameObject> = state.iter().map(|ref obj| {
-        match obj.clone().clone() {
+    let mut new_state: Vec<GameObject> = state.iter().map(|&obj| {
+        match obj {
 
             // fishies want to get closer to other fishies but not too close,
             // avoid sharks based on how fast the sharks are going, and follow
@@ -113,22 +113,22 @@ pub fn simulate(state: &Vec<GameObject>,
                     return GameObject::Fishy(fish);
                 }
 
-                let leadership = 0.25;
-                let death_smell = 80.;
-                let fear_of_the_dead = 20.;
-                let personal_space = 17.;
-                let presence = 40.;
-                let fear_of_intimacy = 20.;
-                let lovey_dovey = 0.002;
-                let sight_range = 800.;
-                let attraction_range = 300.;
-                let alignment_range = 200.;
-                let death_zone = 12.;
-                let fishy_sense = 25.;
-                let fear_of_death = 200.;
-                let turn_rate = 12.;
-                let speed = 12.;
-                let tilt_factor = 0.05;
+                const LEADERSHIP : f32 = 0.25;
+                const DEATH_SMELL : f32 = 80.;
+                const FEAR_OF_THE_DEAD : f32 = 20.;
+                const PERSONAL_SPACE : f32 = 17.;
+                const PRESENCE : f32 = 40.;
+                const FEAR_OF_INTIMACY : f32 = 20.;
+                const LOVEY_DOVEY : f32 = 0.002;
+                const SIGHT_RANGE : f32 = 800.;
+                const ATTRACTION_RANGE : f32 = 300.;
+                const ALIGNMENT_RANGE : f32 = 200.;
+                const DEATH_ZONE : f32 = 12.;
+                const FISHY_SENSE : f32 = 25.;
+                const FEAR_OF_DEATH : f32 = 200.;
+                const TURN_RATE : f32 = 12.;
+                const SPEED : f32 = 12.;
+                const TILT_FACTOR : f32 = 0.05;
 
                 let mut push = zero_vector();
                 let tilt_decider = rand::random::<i32>() % 12000;
@@ -137,41 +137,41 @@ pub fn simulate(state: &Vec<GameObject>,
                 } else if tilt_decider / 4 == 0 {
                     fish.tilt = zero_vector();
                 }
-                push = push + fish.tilt * tilt_factor;
+                push = push + fish.tilt * TILT_FACTOR;
                 for ref obj_inner in state.iter() {
                     match obj_inner {
                         &&GameObject::Ball(ref ball) => {
                             if input.special {continue;}
                             let target = fish.position - ball.position;
                             let mag = get_magnitude(target);
-                            if mag > presence && mag < sight_range {
-                                push = push - (target / mag) * leadership;
+                            if mag > PRESENCE && mag < SIGHT_RANGE {
+                                push = push - (target / mag) * LEADERSHIP;
                             }
                         },
                         &&GameObject::Fishy(ref other) => {
                             let target = fish.position - other.position;
                             let mag = get_magnitude(target);
                             if mag == 0. {continue;}
-                            if !other.alive && mag < death_smell {
-                                push = push + (target / mag) * fear_of_the_dead;
-                            } else if mag < personal_space {
-                                push = push + (target / mag) * fear_of_intimacy;
-                            } else if mag < alignment_range {
-                                push = push + other.tilt * tilt_factor;
-                                push = push + get_unit_vector(other.orientation) * lovey_dovey;
-                            } else if mag < attraction_range {
-                                push = push - (target / mag) * lovey_dovey;
+                            if !other.alive && mag < DEATH_SMELL {
+                                push = push + (target / mag) * FEAR_OF_THE_DEAD;
+                            } else if mag < PERSONAL_SPACE {
+                                push = push + (target / mag) * FEAR_OF_INTIMACY;
+                            } else if mag < ALIGNMENT_RANGE {
+                                push = push + other.tilt * TILT_FACTOR;
+                                push = push + get_unit_vector(other.orientation) * LOVEY_DOVEY;
+                            } else if mag < ATTRACTION_RANGE {
+                                push = push - (target / mag) * LOVEY_DOVEY;
                             }
                         },
                         &&GameObject::Sharky(ref shark) => {
                             let delta = fish.position - shark.position;
                             let mag = get_magnitude(delta);
-                            if mag < death_zone {
+                            if mag < DEATH_ZONE {
                                 fish.alive = false;
                                 continue;
                             }
-                            if mag < shark.speed * fishy_sense {
-                                push = push + (delta / mag) * fear_of_death;
+                            if mag < shark.speed * FISHY_SENSE {
+                                push = push + (delta / mag) * FEAR_OF_DEATH;
                             }
                         },
                         _ => {}
@@ -181,10 +181,10 @@ pub fn simulate(state: &Vec<GameObject>,
                 push = push / get_magnitude(push);
                 //push = bound(fish.position, push);
                 let target_r = to_360(get_rotation(push));
-                let new_r = rotate_toward(fish.orientation, target_r, turn_rate);
+                let new_r = rotate_toward(fish.orientation, target_r, TURN_RATE);
                 let unit_vector = get_unit_vector(new_r);
 
-                fish.velocity = unit_vector * speed;
+                fish.velocity = unit_vector * SPEED;
                 fish.position = fish.position + fish.velocity;
                 fish.orientation = new_r;
                 if fish.animation == 4 {
@@ -200,51 +200,51 @@ pub fn simulate(state: &Vec<GameObject>,
             // rapidly toward the fishies
             GameObject::Sharky(mut shark) => {
                 let mut push = zero_vector();
-                let stalking_distance = 1024.;
-                let smell_distance = 4096.;
-                let mob_mentality = 512.;
-                let bandwagon_appeal = 20.;
-                let personal_space = 200.;
-                let target_range = 30.;
-                let active_turn_rate = 2.;
-                let inactive_turn_rate = 0.5;
-                let accel = 2.;
-                let decel = accel / 4.;
-                let minimum_speed = 7.;
-                let maximum_speed = 45.;
-                let energy_decay = 4;
-                let max_energy = 1024;
-                let heres_johnny = 256;
+                const STALKING_DISTANCE : f32 = 1024.;
+                const SMELL_DISTANCE : f32 = 4096.;
+                const MOB_MENTALITY : f32 = 512.;
+                const BANDWAGON_APPEAL : f32 = 20.;
+                const PERSONAL_SPACE : f32 = 200.;
+                const TARGET_RANGE : f32 = 30.;
+                const ACTIVE_TURN_RATE : f32 = 2.;
+                const INACTIVE_TURN_RATE : f32 = 0.5;
+                const ACCEL : f32 = 2.;
+                const DECEL : f32 = ACCEL / 4.;
+                const MINIMUM_SPEED : f32 = 7.;
+                const MAXIMUM_SPEED : f32 = 45.;
+                const ENERGY_DECAY : i32 = 4;
+                const MAX_ENERGY : i32 = 1024;
+                const HERES_JOHNNY : i32 = 256;
 
                 let mut fish_in_range = false;
 
-                for ref obj_inner in state.iter() {
+                for obj_inner in state.iter() {
                     match obj_inner {
-                        &&GameObject::Ball(..) => { },
-                        &&GameObject::Fishy(ref other) => {
+                        &GameObject::Ball(..) => { },
+                        &GameObject::Fishy(ref other) => {
                             let delta = shark.position - other.position;
                             let mag = get_magnitude(delta);
-                            if shark.active || mag > stalking_distance {
+                            if shark.active || mag > STALKING_DISTANCE {
                                 push = push - (delta / mag);
                             } else {
                                 push = push + (delta / mag);
                             }
 
-                            if mag < smell_distance {
+                            if mag < SMELL_DISTANCE {
                                 fish_in_range = true;
                             }
                         },
-                        &&GameObject::Sharky(ref other) => {
+                        &GameObject::Sharky(ref other) => {
                             let delta = shark.position - other.position;
                             let mag = get_magnitude(delta);
                             if mag == 0. {continue;}
-                            if mag < personal_space {
-                                push = push + (delta / mag) * personal_space;
-                            } else if mag < mob_mentality {
+                            if mag < PERSONAL_SPACE {
+                                push = push + (delta / mag) * PERSONAL_SPACE;
+                            } else if mag < MOB_MENTALITY {
                                 if other.active && shark.energy > 0 {
                                     shark.active = true;
                                 }
-                                push = push - (delta / mag) * bandwagon_appeal;
+                                push = push - (delta / mag) * BANDWAGON_APPEAL;
                             }  
                         },
                         _ => {}
@@ -255,25 +255,25 @@ pub fn simulate(state: &Vec<GameObject>,
                 //push = bound(shark.position, push);
                 let target_r = to_360(get_rotation(push));
                 let turn_rate = if shark.active {
-                    active_turn_rate
+                    ACTIVE_TURN_RATE
                 } else {
-                    inactive_turn_rate
+                    INACTIVE_TURN_RATE
                 };
                 let new_r = rotate_toward(shark.orientation, target_r, turn_rate);
                 let unit_vector = get_unit_vector(new_r);
-                let on_target = (new_r - target_r).abs() < target_range;
+                let on_target = (new_r - target_r).abs() < TARGET_RANGE;
                 if shark.energy <= 0 && !on_target {
                     shark.active = false;
                 }
                 if fish_in_range && shark.active {
-                    if on_target || shark.speed > minimum_speed {
-                        shark.energy -= energy_decay;
-                        shark.speed = f_min(shark.speed + accel, maximum_speed);   
+                    if on_target || shark.speed > MINIMUM_SPEED {
+                        shark.energy -= ENERGY_DECAY;
+                        shark.speed = f_min(shark.speed + ACCEL, MAXIMUM_SPEED);   
                     }
                 } else {
-                    shark.energy = cmp::min(shark.energy + 1, max_energy);
-                    shark.speed = f_max(shark.speed - decel, minimum_speed);
-                    if rand::random::<i32>() % heres_johnny == 0 {
+                    shark.energy = cmp::min(shark.energy + 1, MAX_ENERGY);
+                    shark.speed = f_max(shark.speed - DECEL, MINIMUM_SPEED);
+                    if rand::random::<i32>() % HERES_JOHNNY == 0 {
                         shark.active = true;
                     }
                 }
@@ -291,19 +291,19 @@ pub fn simulate(state: &Vec<GameObject>,
             // name change
             GameObject::Ball(mut ball) => {
                 ball_pos = ball.position;
-                let accel = 0.5;
-                let speed_cap = 15.;
-                let turn_rate = 6.;
-                if input.direction.left { ball.orientation -= turn_rate };
-                if input.direction.right { ball.orientation += turn_rate };
+                const ACCEL : f32 = 0.5;
+                const SPEED_CAP : f32 = 15.;
+                const TURN_RATE : f32 = 6.;
+                if input.direction.left { ball.orientation -= TURN_RATE };
+                if input.direction.right { ball.orientation += TURN_RATE };
                 if input.direction.up { 
-                    ball.speed = f_min(ball.speed + accel, speed_cap);
+                    ball.speed = f_min(ball.speed + ACCEL, SPEED_CAP);
                 };
                 if input.direction.down {
-                    ball.speed = f_max(ball.speed - accel, 0.); 
+                    ball.speed = f_max(ball.speed - ACCEL, 0.); 
                 }
                 if input.super_speed {
-                    ball.speed = 2. * speed_cap;
+                    ball.speed = 2. * SPEED_CAP;
                 }
                 let velocity = get_unit_vector(ball.orientation) * ball.speed;
                 ball.position = ball.position + velocity;
@@ -355,27 +355,6 @@ fn get_rotation(vec: Vector) -> f32 {
         270.
     }
 }
-
-// fn bound(pos: Vector, push: Vector) -> Vector {
-//     let mut bounded = push;
-//     bounded.x = if pos.x > BOUNDS_X {
-//         -1.
-//     } else if pos.x < -BOUNDS_X {
-//         1.
-//     } else {
-//         push.x
-//     };
-
-//     bounded.y = if pos.y > BOUNDS_Y {
-//         -1.
-//     } else if pos.y < -BOUNDS_Y {
-//         1.
-//     } else {
-//         push.y
-//     };
-
-//     bounded
-//}
 
 fn zero_vector() -> Vector {
     Vector{x: 0., y: 0.}
